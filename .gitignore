@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dataset and training outputs
+ai/dataset/
+ai/reports/
+
+# Logs and temporary files
+*.log
+.DS_Store
+Thumbs.db
+
+# Python environments and secrets
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+
+# Dataset and training reports
+ai/dataset/
+ai/reports/
+
+# Keep only the V4 best model in Git
+ai/models/*.keras
+!ai/models/tomatodoc_mobilenetv2_tuned_v4_best.keras
+
+# Logs and temporary files
+*.log
+.DS_Store
+Thumbs.db

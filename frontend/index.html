@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TomatoDoc</title>
+<meta name="description" content="AI tomato leaf disease detection for tomato growers">
+<meta name="theme-color" content="#2E7D32">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/icons/pwa-192x192.png">
+<link rel="apple-touch-icon" href="/icons/pwa-192x192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --green:#2E7D32;--deep:#1B4D2B;--mint:#E6F2E4;--ground:#F5F8F3;--border:#D8E4D5;
+  --ink:#17261C;--muted:#53665A;--tomato:#D93A25;
+  --high-bg:#D9F0DB;--high-ink:#1B5E20;
+  --mid-bg:#FCEBC2;--mid-ink:#6B4300;
+  --low-bg:#FBDAD4;--low-ink:#8C1F10;
+  /* If you later add the Bricolage Grotesque / Figtree font files, they are used automatically. */
+  --head:'Bricolage Grotesque','Segoe UI Semibold','Trebuchet MS',system-ui,sans-serif;
+  --body:'Figtree','Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',sans-serif;
+}
+*{box-sizing:border-box}
+html{font-size:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.45;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--head);color:var(--deep);margin:0;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #1B5E20;outline-offset:2px}
+.app{max-width:30rem;margin:0 auto;min-height:100vh;min-height:100dvh;padding:calc(1.25rem + env(safe-area-inset-top)) 1.25rem 7.5rem}
+.view[hidden]{display:none}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-height:3rem}
+.brand{display:flex;align-items:center;gap:.6rem}
+.brand b{font-family:var(--head);font-size:1.4rem;color:var(--deep);line-height:1.1;display:block}
+.brand small{display:block;font-size:.8rem;color:var(--muted)}
+.vt{font-size:1.15rem}
+.spacer{width:2.75rem}
+.back{width:2.75rem;height:2.75rem;border-radius:50%;background:#fff;border:1px solid var(--border);color:var(--deep);display:grid;place-items:center;padding:0}
+.pill{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .85rem;border-radius:999px;font-size:.9rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--mint);color:var(--deep)}
+.pill.warn{background:var(--mid-bg);color:var(--mid-ink)}
+
+.welcome{display:flex;align-items:center;justify-content:space-between;margin:.6rem 0 .4rem}
+.hello{font-size:2.25rem;line-height:1.05;color:var(--green)}
+.welcome p{margin:.5rem 0 0;font-size:1.05rem;color:#3B4F42;max-width:12rem}
+.scan-btn{display:flex;align-items:center;gap:1.1rem;width:100%;padding:1.2rem 1.3rem;border:0;border-radius:1.75rem;background:var(--green);color:#fff;text-align:left;margin-bottom:.75rem}
+.scan-ic{width:4.2rem;height:4.2rem;border-radius:50%;background:#fff;color:var(--green);display:grid;place-items:center;flex-shrink:0}
+.scan-title{display:block;font-family:var(--head);font-weight:700;font-size:1.5rem;line-height:1.1}
+.scan-sub{display:block;font-size:.95rem;color:#E3F4E4;margin-top:.25rem}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;min-height:3.25rem;padding:0 1rem;border-radius:1rem;border:2px solid var(--green);font-weight:600;font-size:1.05rem;margin-bottom:.6rem;text-decoration:none}
+.btn-solid{background:var(--green);color:#fff}
+.btn-outline{background:#fff;color:#1B5E20}
+.btn:disabled{opacity:.6;cursor:default}
+.link{background:none;border:0;color:#1B5E20;font-weight:600;font-size:1rem;min-height:2.75rem;padding:0 .25rem}
+.link.danger{color:var(--low-ink)}
+.center{display:flex;justify-content:center}
+
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin:1.4rem 0 .6rem}
+.section-head h2{font-size:1.25rem}
+.sub-h{font-size:1.2rem;margin:1.2rem 0 .6rem}
+.item{display:flex;align-items:center;gap:.9rem;width:100%;min-height:4rem;padding:.6rem .85rem;margin-bottom:.6rem;background:#fff;border:1px solid var(--border);border-radius:1.1rem;text-align:left;color:inherit}
+.thumb{width:3rem;height:3rem;border-radius:.75rem;object-fit:cover;background:#1B2A18;flex-shrink:0}
+.item-main{flex:1;min-width:0}
+.item-main b{display:block;font-size:1rem}
+.item-main small{display:block;font-size:.875rem;color:var(--muted);margin-top:.1rem}
+.chip{display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;font-weight:600;padding:.3rem .6rem;border-radius:999px;white-space:nowrap}
+.chip-high{background:var(--high-bg);color:var(--high-ink)}
+.chip-mid{background:var(--mid-bg);color:var(--mid-ink)}
+.chip-low{background:var(--low-bg);color:var(--low-ink)}
+.empty{color:var(--muted);margin:.5rem 0}
+
+.banner{display:block;width:100%;text-align:left;border:1px solid #F0D890;background:#FFF4D6;color:#4F3300;border-radius:1rem;padding:.8rem .9rem;font-size:.95rem;line-height:1.45;margin:.8rem 0}
+.notice{border-radius:1rem;padding:.75rem .9rem;font-size:.95rem;line-height:1.45;margin:.8rem 0}
+.notice.low{background:var(--low-bg);color:var(--low-ink)}
+.notice.mid{background:var(--mid-bg);color:var(--mid-ink)}
+
+.card{background:#fff;border:1px solid var(--border);border-radius:1.25rem;padding:.95rem 1rem;margin-bottom:.75rem}
+.card h3{font-size:1.15rem;margin-bottom:.5rem}
+.card.mint{background:var(--mint);border-color:var(--mint)}
+.card p{margin:0}
+.photo{height:12rem;border-radius:1.4rem;background:#1B2A18;overflow:hidden;margin:.75rem 0}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.status{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;border-radius:999px;font-weight:600;font-size:.9rem}
+.status.bad{background:var(--low-bg);color:var(--low-ink)}
+.status.ok{background:var(--high-bg);color:var(--high-ink)}
+.dname{font-size:2.2rem;line-height:1.05;margin:.6rem 0 0}
+.lead{margin:.5rem 0 .9rem;color:#3B4F42}
+.row{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.row strong{font-size:1rem}
+.meter{display:flex;gap:.25rem;margin-top:.7rem}
+.meter i{flex:1;height:.65rem;border-radius:.25rem;background:var(--border)}
+.meter i.on{background:var(--green)}
+.small{font-size:.9rem;color:var(--muted);margin-top:.6rem}
+.pills{display:flex;gap:.6rem;margin:.75rem 0}
+.pill-info{flex:1;display:flex;align-items:center;gap:.5rem;background:#fff;border:1px solid var(--border);border-radius:1rem;padding:.65rem .75rem;font-size:.9rem;font-weight:600;color:var(--deep)}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:.7rem}
+ol.steps li{display:flex;gap:.75rem;align-items:flex-start}
+ol.steps .n{width:1.75rem;height:1.75rem;border-radius:50%;background:var(--green);color:#fff;font-weight:600;font-size:.9rem;display:grid;place-items:center;flex-shrink:0}
+ol.steps .t{padding-top:.1rem}
+ul.dots{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+ul.dots li{display:flex;gap:.65rem;align-items:flex-start}
+ul.dots li:before{content:'';width:.5rem;height:.5rem;border-radius:50%;background:var(--green);margin-top:.55rem;flex-shrink:0}
+.dhead{display:flex;align-items:center;gap:.9rem}
+.dhead .thumb{width:3.75rem;height:3.75rem;border-radius:.9rem}
+.dhead h2{font-size:1.6rem;line-height:1.1}
+
+.chips{display:flex;gap:.5rem;margin:.75rem 0}
+.fchip{min-height:2.75rem;padding:0 1.1rem;border-radius:999px;border:2px solid var(--green);background:transparent;color:#1B5E20;font-weight:600;font-size:.95rem}
+.fchip[aria-pressed="true"]{background:var(--green);color:#fff}
+.seg{display:flex;gap:.25rem;background:#fff;border:1px solid var(--border);border-radius:1rem;padding:.25rem}
+.seg button{flex:1;min-height:2.75rem;border:0;border-radius:.75rem;background:transparent;color:#1B5E20;font-weight:600;font-size:1rem}
+.seg button[aria-pressed="true"]{background:var(--green);color:#fff}
+.set-h{font-size:1.1rem;margin:1.2rem 0 .5rem}
+.setting{display:flex;align-items:center;gap:.8rem;padding:.75rem 0}
+.setting+.setting{border-top:1px solid #E3EAE0}
+.setting>div{flex:1;min-width:0}
+.setting b{display:block}
+.setting small{display:block;color:var(--muted);font-size:.9rem;line-height:1.4}
+.switch{width:3.25rem;height:2rem;border-radius:1rem;border:2px solid var(--muted);background:transparent;position:relative;flex-shrink:0;padding:0}
+.switch span{position:absolute;top:.2rem;left:.2rem;width:1.35rem;height:1.35rem;border-radius:50%;background:var(--muted);transition:left .15s}
+.switch[aria-checked="true"]{background:var(--green);border-color:var(--green)}
+.switch[aria-checked="true"] span{left:1.35rem;background:#fff}
+.rowlink{display:flex;align-items:center;gap:.75rem;width:100%;min-height:3.5rem;background:none;border:0;font-size:1rem;font-weight:600;text-align:left;color:inherit}
+.rowlink+.rowlink{border-top:1px solid #E3EAE0}
+.rowlink.danger{color:var(--low-ink)}
+.rowlink span{flex:1}
+details.about summary{min-height:3.25rem;display:flex;align-items:center;font-weight:600;cursor:pointer}
+details.about+details.about{border-top:1px solid #E3EAE0}
+details.about p{margin:.1rem 0 .8rem;color:#3B4F42}
+.version{text-align:center;color:var(--muted);font-size:.9rem;margin:1.2rem 0 0}
+
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--border)}
+.nav-inner{max-width:30rem;margin:0 auto;display:flex;justify-content:space-around;padding:.5rem 1.5rem calc(.6rem + env(safe-area-inset-bottom))}
+.nav button{display:flex;flex-direction:column;align-items:center;gap:.25rem;min-width:4.75rem;min-height:3.25rem;padding:.5rem .6rem;border:0;border-radius:1rem;background:transparent;color:var(--muted);font-size:.78rem;font-weight:600}
+.nav button.active{background:var(--mint);color:var(--deep)}
+
+.overlay{position:fixed;inset:0;background:rgba(245,248,243,.94);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;font-weight:600;color:var(--deep);padding:2rem;text-align:center}
+.overlay[hidden]{display:none}
+.spinner{width:2.2rem;height:2.2rem;border:.3rem solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:3s}}
+.toast{position:fixed;left:50%;transform:translate(-50%,1rem);bottom:calc(6.2rem + env(safe-area-inset-bottom));width:max-content;max-width:min(26rem,calc(100% - 2rem));background:var(--deep);color:#fff;padding:.8rem 1rem;border-radius:1rem;font-size:.95rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{background:var(--low-ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="view-home" class="view"></section>
+  <section id="view-result" class="view" hidden></section>
+  <section id="view-details" class="view" hidden></section>
+  <section id="view-history" class="view" hidden></section>
+  <section id="view-settings" class="view" hidden></section>
+</div>
+<nav class="nav" aria-label="Main"><div class="nav-inner" id="nav"></div></nav>
+<div id="overlay" class="overlay" hidden><span class="spinner"></span><span id="overlayMsg">Working…</span></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input id="camInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="galInput" type="file" accept="image/*" hidden>
+<noscript>TomatoDoc needs JavaScript to run.</noscript>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Settings ---------- */
+const API = { predict: '/api/predict', health: '/api/health' };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const settings = { textSize: store.get('td_textSize', 'normal'), autoSync: store.get('td_autoSync', true) };
+const TEXT_SIZES = { normal: '100%', large: '112.5%', larger: '125%' };
+const MAX_HISTORY = 50;
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const when = ts => new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+const I = {
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  gallery: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 9"/>',
+  home: '<path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-6h4v6"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  sliders: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  chevron: '<path d="M9 5l7 7-7 7"/>',
+  wifi: '<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/>',
+  wifiOff: '<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16a5 5 0 0 1 6 0"/><path d="M3 3l18 18"/>',
+  warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".8"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.4-1.1.9-1.1 1.7"/><circle cx="12" cy="17" r=".8"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  download: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>'
+};
+const svg = (k, size = 24) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
+const LOGO = '<svg width="36" height="36" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="18" r="11" fill="#D93A25"/><path d="M16 8L12 4M16 8L20 4M16 8V3M16 8H9M16 8H23" stroke="#2E7D32" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
+const PLANT = '<svg width="96" height="120" viewBox="0 0 120 150" aria-hidden="true"><path d="M62 148C58 105 68 72 60 16" stroke="#2E7D32" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M60 38C40 26 28 36 26 50C44 54 54 50 60 38Z" fill="#3F9A47"/><path d="M62 28C80 14 94 20 98 34C80 40 68 38 62 28Z" fill="#3F9A47"/><circle cx="40" cy="92" r="20" fill="#D93A25"/><circle cx="86" cy="76" r="17" fill="#D93A25"/><path d="M40 73l-6-5M40 73l6-5M40 73v-7" stroke="#1B4D2B" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M86 59l-5-4M86 59l5-4M86 59v-6" stroke="#1B4D2B" stroke-width="3" stroke-linecap="round" fill="none"/></svg>';
+
+/* ---------- Disease knowledge (guidance only, confirm with an agriculturist) ---------- */
+const DISEASES = {
+  healthy: { healthy: true, name: "Healthy leaf",
+    summary: "The model did not find signs of disease in this photo.",
+    actions: ["Water at the base of the plant, not over the leaves", "Check leaves every week for spots, curling or insects", "Remove old or yellow lower leaves to keep air moving"] },
+  bacterial_spot: { name: "Bacterial spot",
+    summary: "Bacteria cause small, dark, water-soaked spots on leaves and rough spots on fruit.",
+    symptoms: ["Small dark spots on leaves, often with a yellow ring", "Spots can join together and leaves may drop", "Raised, scabby spots on fruit"],
+    causes: ["Bacteria spread by splashing water and wind", "Warm, wet and humid weather", "Infected seed, seedlings or plant debris"],
+    actions: ["Remove badly affected leaves and bag them", "Avoid working among wet plants", "Ask your local agriculturist which spray is approved in your area"],
+    prevent: ["Use clean seed and healthy seedlings", "Water at the base, avoid overhead watering", "Rotate crops and clear plant debris"] },
+  early_blight: { name: "Early blight",
+    summary: "A fungus (Alternaria solani) causes brown spots with ring patterns, usually on the older, lower leaves first.",
+    symptoms: ["Dark brown spots with target-like rings", "Yellowing and leaf drop", "Dark spots on stems and fruits"],
+    causes: ["Alternaria solani fungus", "Warm, humid weather", "Infected soil and plant debris"],
+    actions: ["Remove infected leaves", "Improve air circulation between plants", "Apply a fungicide labeled for tomatoes. Ask your local agriculturist which product is approved in your area"],
+    prevent: ["Use healthy or resistant plants", "Avoid overhead watering", "Rotate crops and clean up plant debris"] },
+  late_blight: { name: "Late blight",
+    summary: "A water mold (Phytophthora infestans) that spreads fast in cool, wet weather and can destroy plants within days.",
+    symptoms: ["Large, dark, water-soaked patches on leaves", "White fuzzy growth under leaves in damp conditions", "Firm brown patches on fruit and stems"],
+    causes: ["Cool, wet and humid weather", "Spores carried by wind and rain from infected plants", "Infected volunteer plants nearby"],
+    actions: ["Act quickly: remove and bag affected leaves or plants, do not compost them", "Keep leaves dry and improve airflow", "Contact your local agriculturist promptly, because treatment works best when started early"],
+    prevent: ["Use resistant varieties where available", "Avoid overhead watering and crowded planting", "Remove volunteer plants and debris after harvest"] },
+  leaf_mold: { name: "Leaf mold",
+    summary: "A fungus that thrives in high humidity, mostly where air does not move well.",
+    symptoms: ["Pale green or yellow spots on the upper leaf surface", "Olive-green to brown fuzzy mold under the leaf", "Leaves curl, wither and drop"],
+    causes: ["High humidity and poor ventilation", "Leaves staying wet for long periods", "Spores surviving on debris and tools"],
+    actions: ["Improve ventilation and plant spacing", "Remove affected leaves", "Ask your agriculturist about fungicide options if it keeps spreading"],
+    prevent: ["Water at the base, in the morning", "Prune lower leaves for airflow", "Clean tools and remove debris"] },
+  septoria: { name: "Septoria leaf spot",
+    summary: "A fungus that causes many small spots on lower leaves and spreads upward.",
+    symptoms: ["Many small round spots with gray-white centers and dark edges", "Tiny dark specks in the middle of the spots", "Yellowing and dropping of lower leaves"],
+    causes: ["Splashing rain or irrigation spreading spores", "Warm, wet weather", "Infected debris and nearby weeds"],
+    actions: ["Remove affected lower leaves", "Keep leaves as dry as practical and mulch to stop soil splash", "Ask your agriculturist about a fungicide labeled for tomatoes"],
+    prevent: ["Rotate crops", "Avoid overhead watering", "Clear plant debris after harvest"] },
+  spider_mites: { name: "Spider mites",
+    summary: "Tiny pests that suck sap from leaves, mostly in hot, dry weather.",
+    symptoms: ["Tiny pale speckles on leaves", "Fine webbing under leaves or between stems", "Leaves turn bronze or yellow and dry out"],
+    causes: ["Hot, dry weather", "Dusty conditions", "Mites moving in from nearby plants and weeds"],
+    actions: ["Check the underside of leaves for tiny mites or webbing", "Rinse leaves with water and remove heavily infested ones", "Ask your agriculturist before choosing a treatment"],
+    prevent: ["Keep plants well watered", "Control weeds around the field", "Check plants regularly in hot, dry spells"] },
+  target_spot: { name: "Target spot",
+    summary: "A fungus that causes brown spots with rings on leaves, stems and fruit.",
+    symptoms: ["Brown spots with ring patterns", "Spots may join and leaves yellow and drop", "Sunken spots on fruit"],
+    causes: ["Warm, humid weather", "Leaves staying wet for long periods", "Infected plant debris"],
+    actions: ["Remove affected leaves", "Improve airflow between plants", "Ask your agriculturist about suitable fungicides"],
+    prevent: ["Avoid overhead watering", "Rotate crops", "Clear plant debris"] },
+  mosaic: { name: "Tomato mosaic virus",
+    summary: "A virus that causes mottled light and dark green leaves. It spreads by touch and on tools.",
+    symptoms: ["Mottled light and dark green patches on leaves", "Curled or distorted leaves", "Stunted plants and uneven fruit ripening"],
+    causes: ["Spreads through hands, tools and clothing", "Infected seed or plant debris", "The virus can survive on surfaces for a long time"],
+    actions: ["Remove and bag infected plants, do not compost them", "Wash hands and disinfect tools after touching suspect plants", "Confirm with a local agriculturist. Virus diseases cannot be cured"],
+    prevent: ["Use certified virus-free seed", "Wash hands and tools between plants", "Rotate crops and remove debris"] },
+  curl: { name: "Tomato yellow leaf curl virus",
+    summary: "A virus spread by whiteflies that curls and yellows leaves and stunts plants.",
+    symptoms: ["Leaves curl upward and turn yellow at the edges", "Stunted, bushy plants", "Few flowers and little fruit"],
+    causes: ["Whiteflies carry the virus from plant to plant", "Infected seedlings", "Weeds that host whiteflies"],
+    actions: ["Remove and bag infected plants early", "Check leaf undersides for whiteflies", "Ask your agriculturist about whitefly control and resistant varieties"],
+    prevent: ["Use resistant varieties and healthy seedlings", "Cover seedbeds with insect nets", "Control weeds around the field"] }
+};
+function keyOf(label) {
+  const s = String(label).toLowerCase();
+  if (s.includes('healthy')) return 'healthy';
+  if (s.includes('bacterial')) return 'bacterial_spot';
+  if (/early.?blight/.test(s)) return 'early_blight';
+  if (/late.?blight/.test(s)) return 'late_blight';
+  if (s.includes('mold')) return 'leaf_mold';
+  if (s.includes('septoria')) return 'septoria';
+  if (s.includes('spider')) return 'spider_mites';
+  if (s.includes('target')) return 'target_spot';
+  if (s.includes('mosaic')) return 'mosaic';
+  if (s.includes('curl')) return 'curl';
+  return null;
+}
+const prettyLabel = l => String(l).replace(/^Tomato___/, '').replace(/_+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+function info(label) {
+  const k = keyOf(label);
+  if (k) return DISEASES[k];
+  return { name: prettyLabel(label), summary: "Compare the symptoms with your plant to confirm this result.",
+    actions: ["Compare the symptoms with your plant", "Scan a second leaf to confirm", "Ask a local agriculturist if you are unsure"] };
+}
+const level = p => (p >= 85 ? 'high' : p >= 60 ? 'medium' : 'low');
+const LEVEL = { high: { label: 'High', cls: 'chip-high' }, medium: { label: 'Medium', cls: 'chip-mid' }, low: { label: 'Low', cls: 'chip-low' } };
+
+/* ---------- Local database (IndexedDB) ---------- */
+const dbReady = new Promise((res, rej) => {
+  if (!window.indexedDB) { rej(new Error('Storage is not available.')); return; }
+  const r = indexedDB.open('tomatodoc', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('scans', { keyPath: 'id' });
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+function run(mode, fn) {
+  return dbReady.then(db => new Promise((res, rej) => {
+    const t = db.transaction('scans', mode);
+    const req = fn(t.objectStore('scans'));
+    t.oncomplete = () => res(req ? req.result : undefined);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error);
+  }));
+}
+const dbAll = () => run('readonly', s => s.getAll());
+const dbPut = r => run('readwrite', s => s.put(r));
+const dbDelete = id => run('readwrite', s => s.delete(id));
+const dbClear = () => run('readwrite', s => s.clear());
+
+/* ---------- State ---------- */
+let scans = [];
+const urls = new Map();
+const state = { online: navigator.onLine, ready: true, msg: '', view: 'home', id: null, from: 'home', filter: 'all', busy: false, syncing: false };
+let installPrompt = null;
+
+function imgUrl(rec) {
+  if (!urls.has(rec.id)) urls.set(rec.id, URL.createObjectURL(rec.image));
+  return urls.get(rec.id);
+}
+async function loadScans() {
+  scans = (await dbAll()).sort((a, b) => b.createdAt - a.createdAt);
+  for (const [id, u] of urls) if (!scans.some(s => s.id === id)) { URL.revokeObjectURL(u); urls.delete(id); }
+}
+async function pruneHistory() {
+  const done = scans.filter(s => s.status === 'done');
+  if (done.length <= MAX_HISTORY) return;
+  for (const s of done.slice(MAX_HISTORY)) await dbDelete(s.id);
+  await loadScans();
+}
+
+/* ---------- Photo preparation ---------- */
+async function compress(file, max = 640, quality = 0.82) {
+  let source, w, h, cleanup = () => {};
+  try {
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    source = bmp; w = bmp.width; h = bmp.height; cleanup = () => { if (bmp.close) bmp.close(); };
+  } catch {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('That file could not be read as a photo.'));
+      i.src = url;
+    });
+    source = img; w = img.naturalWidth; h = img.naturalHeight; cleanup = () => URL.revokeObjectURL(url);
+  }
+  const scale = Math.min(1, max / Math.max(w, h));
+  const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+  const c = document.createElement('canvas');
+  c.width = cw; c.height = ch;
+  c.getContext('2d').drawImage(source, 0, 0, cw, ch);
+  cleanup();
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+  if (!blob) throw new Error('Could not prepare the photo.');
+  return blob;
+}
+
+/* ---------- Server calls ---------- */
+class NetErr extends Error {}
+async function analyzeBlob(blob) {
+  let r;
+  try {
+    const fd = new FormData();
+    fd.append('image', blob, 'leaf.jpg');
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 90000);
+    try { r = await fetch(API.predict, { method: 'POST', body: fd, signal: ctrl.signal }); }
+    finally { clearTimeout(t); }
+  } catch (e) {
+    throw new NetErr(e.name === 'AbortError' ? 'The server took too long to answer.' : 'No connection to the TomatoDoc server.');
+  }
+  let data;
+  try { data = await r.json(); } catch { throw new Error('The server returned an unexpected response.'); }
+  if (!r.ok) throw new Error(data.error || 'Prediction failed.');
+  if (!data || !data.prediction) throw new Error('The server returned an unexpected response.');
+  return data;
+}
+async function tryAnalyze(rec) {
+  try {
+    const data = await analyzeBlob(rec.image);
+    rec.status = 'done'; rec.result = data; rec.lastError = '';
+    await dbPut(rec);
+    return 'done';
+  } catch (e) {
+    if (e instanceof NetErr) { await dbPut(rec); return 'offline'; }
+    rec.lastError = e.message;
+    await dbPut(rec);
+    return 'error';
+  }
+}
+async function checkHealth() {
+  if (!navigator.onLine) { state.online = false; renderStatus(); return; }
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    const r = await fetch(API.health, { cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(t);
+    state.online = true;
+    if (r.ok) { state.ready = true; state.msg = ''; }
+    else { state.ready = false; try { state.msg = (await r.json()).error || ''; } catch { state.msg = ''; } }
+  } catch (e) {
+    if (e.name !== 'AbortError') state.online = false;
+  }
+  renderStatus();
+  if (state.view === 'home') renderHome();
+}
+
+/* ---------- Actions ---------- */
+async function handleFile(file) {
+  if (!file || state.busy) return;
+  if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic)$/i.test(file.name || '')) {
+    toast('Please choose a photo (JPG, PNG or WEBP).', true); return;
+  }
+  state.busy = true;
+  overlay(true, 'Preparing photo…');
+  try {
+    const blob = await compress(file);
+    const rec = { id: uid(), createdAt: Date.now(), status: 'pending', image: blob, result: null, lastError: '' };
+    await dbPut(rec);
+    let outcome = 'offline';
+    if (navigator.onLine) { overlay(true, 'Analyzing leaf…'); outcome = await tryAnalyze(rec); }
+    await loadScans();
+    if (outcome === 'done') go('result', { id: rec.id });
+    else if (outcome === 'offline') { toast('Saved on your phone. It will be analyzed when you are back online.'); go('history'); }
+    else { toast(rec.lastError + ' Your photo is saved.', true); go('history'); }
+  } catch (e) {
+    toast(e.message || 'Something went wrong.', true);
+  } finally {
+    state.busy = false;
+    overlay(false);
+    pruneHistory().then(render).catch(() => {});
+  }
+}
+async function syncQueue(manual = false) {
+  if (state.syncing) return;
+  const pending = scans.filter(s => s.status === 'pending').sort((a, b) => a.createdAt - b.createdAt);
+  if (!pending.length) { if (manual) toast('Nothing is waiting.'); return; }
+  if (!navigator.onLine) { if (manual) toast('Still offline. Try again when you have signal.', true); return; }
+  state.syncing = true; render();
+  let done = 0, problem = '';
+  for (const rec of pending) {
+    const r = await tryAnalyze(rec);
+    if (r === 'done') done++;
+    else { problem = r === 'error' ? rec.lastError : 'offline'; break; }
+  }
+  state.syncing = false;
+  await loadScans(); render();
+  if (done) toast(done === 1 ? '1 leaf analyzed.' : done + ' leaves analyzed.');
+  if (problem && problem !== 'offline') toast(problem, true);
+  else if (problem === 'offline' && manual) toast('Could not reach the server.', true);
+}
+async function deleteScan(id) {
+  if (!confirm('Delete this scan?')) return;
+  await dbDelete(id); await loadScans();
+  history.back();
+}
+function setTextSize(v) {
+  if (!TEXT_SIZES[v]) return;
+  settings.textSize = v; store.set('td_textSize', v); applyTextSize(); render();
+}
+function applyTextSize() { document.documentElement.style.fontSize = TEXT_SIZES[settings.textSize] || '100%'; }
+async function installApp() {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  try { await installPrompt.userChoice; } catch {}
+  installPrompt = null; render();
+}
+
+/* ---------- UI helpers ---------- */
+function toast(msg, isErr) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.className = 'toast'; }, 4800);
+}
+function overlay(show, msg) { $('overlay').hidden = !show; if (msg) $('overlayMsg').textContent = msg; }
+function go(view, params = {}) {
+  state.view = view;
+  state.id = params.id || null;
+  if (['home', 'history', 'settings'].includes(view)) state.from = view;
+  history.pushState({ view, id: state.id, from: state.from }, '');
+  render();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('popstate', e => {
+  const s = e.state || { view: 'home' };
+  state.view = s.view; state.id = s.id || null; state.from = s.from || 'home';
+  render();
+});
+const topbar = title => `<div class="topbar"><button class="back" data-action="back" aria-label="Go back">${svg('back', 22)}</button><h1 class="vt">${title}</h1><span class="spacer"></span></div>`;
+
+function itemHtml(rec) {
+  const t = when(rec.createdAt);
+  if (rec.status === 'done') {
+    const i = info(rec.result.prediction), L = LEVEL[level(Number(rec.result.confidence))];
+    return `<button class="item" data-open="${esc(rec.id)}"><img class="thumb" src="${imgUrl(rec)}" alt=""><span class="item-main"><b>${esc(i.name)}</b><small>${esc(t)}</small></span><span class="chip ${L.cls}">${L.label}</span></button>`;
+  }
+  return `<button class="item" data-open="${esc(rec.id)}"><img class="thumb" src="${imgUrl(rec)}" alt=""><span class="item-main"><b>Leaf photo</b><small>${esc(t)}${rec.lastError ? ' · ' + esc(rec.lastError) : ''}</small></span><span class="chip chip-mid">${svg('clock', 13)} Waiting</span></button>`;
+}
+
+/* ---------- Views ---------- */
+function renderStatus() {
+  let cls = 'ok', txt = 'Online', icon = 'wifi';
+  if (!navigator.onLine || !state.online) { cls = 'warn'; txt = 'Offline'; icon = 'wifiOff'; }
+  else if (!state.ready) { cls = 'warn'; txt = 'Server problem'; icon = 'warn'; }
+  document.querySelectorAll('.status-slot').forEach(el => { el.className = 'pill ' + cls + ' status-slot'; el.innerHTML = svg(icon, 16) + ' ' + txt; });
+}
+function renderHome() {
+  const pending = scans.filter(s => s.status === 'pending').length;
+  const recent = scans.filter(s => s.status === 'done').slice(0, 3);
+  const problem = state.online && !state.ready;
+  $('view-home').innerHTML = `
+    <div class="topbar"><div class="brand">${LOGO}<div><b>TomatoDoc</b><small>AI tomato disease detection</small></div></div><span class="pill status-slot"></span></div>
+    <div class="welcome"><div><h1 class="hello">Welcome!</h1><p>Let us keep your tomato plants healthy.</p></div>${PLANT}</div>
+    <button class="scan-btn" data-action="scan"><span class="scan-ic">${svg('camera', 34)}</span><span><span class="scan-title">Scan a leaf</span><span class="scan-sub">Take a photo to check for disease</span></span></button>
+    <button class="btn btn-outline" data-action="gallery">${svg('gallery', 22)} Upload from gallery</button>
+    ${problem ? `<div class="notice low">The analysis service has a problem${state.msg ? ': ' + esc(state.msg) : '.'} Your photos will be saved and analyzed later.</div>` : ''}
+    ${pending ? `<button class="banner" data-go="history">${pending} ${pending === 1 ? 'leaf is' : 'leaves are'} waiting to be analyzed. Tap to see them.</button>` : ''}
+    <div class="section-head"><h2>Recent diagnosis</h2><button class="link" data-go="history">View all</button></div>
+    ${recent.length ? recent.map(itemHtml).join('') : '<p class="empty">No scans yet. Tap “Scan a leaf” to check your first plant.</p>'}`;
+}
+function renderResult() {
+  const v = $('view-result');
+  const rec = scans.find(s => s.id === state.id);
+  const head = topbar('Diagnosis result');
+  if (!rec) { v.innerHTML = head + '<p class="empty">This scan was not found.</p>'; return; }
+  const photo = `<div class="photo"><img src="${imgUrl(rec)}" alt="Photo of the scanned leaf"></div>`;
+  if (rec.status !== 'done') {
+    v.innerHTML = head + photo + `
+      <span class="pill warn">${svg('clock', 16)} Waiting to be analyzed</span>
+      <p class="lead" style="margin-top:.8rem">${navigator.onLine ? 'You are online. Tap the button to analyze this leaf now.' : 'No signal right now. This photo is saved on your phone and will be analyzed automatically when you are back online.'}</p>
+      ${rec.lastError ? `<div class="notice low">${esc(rec.lastError)}</div>` : ''}
+      ${navigator.onLine ? `<button class="btn btn-solid" data-action="sync" ${state.syncing ? 'disabled' : ''}>${svg('refresh', 22)} ${state.syncing ? 'Analyzing…' : 'Analyze now'}</button>` : ''}
+      <div class="center"><button class="link danger" data-action="delete">Delete this photo</button></div>`;
+    return;
+  }
+  const r = rec.result, i = info(r.prediction), conf = Number(r.confidence) || 0, lv = level(conf), L = LEVEL[lv];
+  const status = i.healthy ? `<span class="status ok">${svg('check', 16)} Healthy leaf</span>` : `<span class="status bad">${svg('warn', 16)} Disease detected</span>`;
+  const on = Math.max(0, Math.min(10, Math.round(conf / 10)));
+  const meter = Array.from({ length: 10 }, (_, n) => `<i class="${n < on ? 'on' : ''}"></i>`).join('');
+  const others = (r.top3 || []).filter(p => p.class_name !== r.prediction && Number(p.confidence) >= 3).slice(0, 2);
+  const alt = others.length ? `Also possible: ${others.map(p => esc(info(p.class_name).name) + ' (' + Number(p.confidence).toFixed(0) + '%)').join(', ')}. ` : '';
+  const notice = lv === 'low' ? '<div class="notice low">The app is not sure about this photo. Retake it in daylight with one leaf filling the frame, or scan a second leaf.</div>'
+    : lv === 'medium' ? '<div class="notice mid">Medium confidence. Scan another leaf to confirm before you act.</div>' : '';
+  const steps = i.actions.slice(0, 3).map((t, n) => `<li><span class="n">${n + 1}</span><span class="t">${esc(t)}</span></li>`).join('');
+  const d = new Date(rec.createdAt);
+  v.innerHTML = head + photo + `
+    ${status}
+    <h2 class="dname">${esc(i.name)}</h2>
+    <p class="lead">${esc(i.summary)}</p>
+    <div class="card"><div class="row"><b>How sure the app is</b><span class="chip ${L.cls}">${L.label}, ${conf.toFixed(0)}%</span></div>
+      <div class="meter" role="img" aria-label="${conf.toFixed(0)} percent confidence">${meter}</div>
+      <p class="small">${alt}AI prediction based on your tomato leaf image.</p></div>
+    ${notice}
+    <div class="card mint"><h3>${i.healthy ? 'Keep it healthy' : 'Do this first'}</h3><ol class="steps">${steps}</ol></div>
+    <div class="pills"><div class="pill-info">${svg('calendar', 20)} ${esc(d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }))}</div><div class="pill-info">${svg('clock', 20)} ${esc(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</div></div>
+    <button class="btn btn-solid" data-action="details">View ${i.healthy ? 'care tips' : 'disease details'}</button>
+    <button class="btn btn-outline" data-action="scan">Scan another leaf</button>
+    <div class="center"><button class="link danger" data-action="delete">Delete this scan</button></div>`;
+}
+function listCard(title, icon, items, cls = '') {
+  if (!items || !items.length) return '';
+  return `<div class="card ${cls}"><h3>${title}</h3><ul class="dots">${items.map(t => `<li><span>${esc(t)}</span></li>`).join('')}</ul></div>`;
+}
+function renderDetails() {
+  const v = $('view-details');
+  const rec = scans.find(s => s.id === state.id);
+  const head = topbar('Disease details');
+  if (!rec || rec.status !== 'done') { v.innerHTML = head + '<p class="empty">Details are not available for this scan.</p>'; return; }
+  const i = info(rec.result.prediction);
+  const treat = (i.actions || []).map((t, n) => `<li><span class="n">${n + 1}</span><span class="t">${esc(t)}</span></li>`).join('');
+  v.innerHTML = head + `
+    <div class="card dhead" style="margin-top:.75rem"><img class="thumb" src="${imgUrl(rec)}" alt=""><h2>${esc(i.name)}</h2></div>
+    <div class="card"><h3>Description</h3><p>${esc(i.summary)}</p></div>
+    ${listCard('Symptoms', '', i.symptoms)}
+    ${listCard('Causes', '', i.causes)}
+    ${treat ? `<div class="card mint"><h3>${i.healthy ? 'Keep it healthy' : 'Treatment'}</h3><ol class="steps">${treat}</ol></div>` : ''}
+    ${listCard('Prevent it next time', '', i.prevent)}
+    <p class="small">Sources: [add DA/BPI or university extension references here]. This guide supports your decisions. For serious outbreaks, confirm with a local agriculturist.</p>
+    <button class="btn btn-solid" data-go="home">Back to home</button>`;
+}
+function renderHistory() {
+  const pending = scans.filter(s => s.status === 'pending').sort((a, b) => a.createdAt - b.createdAt);
+  let done = scans.filter(s => s.status === 'done');
+  if (state.filter === 'diseased') done = done.filter(s => !info(s.result.prediction).healthy);
+  if (state.filter === 'healthy') done = done.filter(s => info(s.result.prediction).healthy);
+  const offline = !navigator.onLine || !state.online;
+  let banner = '';
+  if (pending.length && offline) banner = `<div class="banner">No signal right now. Your ${pending.length} waiting ${pending.length === 1 ? 'leaf is' : 'leaves are'} safe on this phone and will be analyzed when you are back online.</div>`;
+  else if (pending.length) banner = `<div class="banner">${pending.length} ${pending.length === 1 ? 'leaf is' : 'leaves are'} waiting to be analyzed.</div><button class="btn btn-solid" data-action="sync" ${state.syncing ? 'disabled' : ''}>${svg('refresh', 22)} ${state.syncing ? 'Analyzing…' : 'Analyze now'}</button>`;
+  else if (offline) banner = '<div class="banner">You are offline. You can still scan: photos are saved and analyzed later.</div>';
+  const f = (val, label) => `<button class="fchip" data-action="filter" data-value="${val}" aria-pressed="${state.filter === val}">${label}</button>`;
+  $('view-history').innerHTML = `
+    <div class="topbar"><h1>History</h1><span class="pill status-slot"></span></div>
+    ${banner}
+    <div class="chips">${f('all', 'All')}${f('diseased', 'Diseased')}${f('healthy', 'Healthy')}</div>
+    ${pending.length ? `<h2 class="sub-h">Waiting for signal</h2>${pending.map(itemHtml).join('')}` : ''}
+    <h2 class="sub-h">Analyzed</h2>
+    ${done.length ? done.map(itemHtml).join('') : '<p class="empty">Nothing here yet.</p>'}`;
+}
+function renderSettings() {
+  const sz = (val, label) => `<button data-action="textsize" data-value="${val}" aria-pressed="${settings.textSize === val}">${label}</button>`;
+  const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  const installCard = installPrompt
+    ? `<div class="setting"><div><b>Add TomatoDoc to home screen</b><small>Opens like an app, even without signal</small></div><button class="btn btn-solid" style="width:auto;margin:0" data-action="install">${svg('download', 20)} Install</button></div>`
+    : `<div class="setting"><div><b>${standalone ? 'TomatoDoc is installed' : 'Add TomatoDoc to your home screen'}</b><small>${standalone ? 'You are using the installed app.' : 'Open your browser menu and choose Install app or Add to Home screen.'}</small></div></div>`;
+  $('view-settings').innerHTML = `
+    <div class="topbar"><h1>Settings</h1></div>
+    <h2 class="set-h">Text size</h2>
+    <div class="seg" role="group" aria-label="Text size">${sz('normal', 'Normal')}${sz('large', 'Large')}${sz('larger', 'Larger')}</div>
+    <h2 class="set-h">Offline and signal</h2>
+    <div class="card"><div class="setting"><div><b>Analyze saved leaves automatically</b><small>Starts when your phone is back online</small></div><button class="switch" role="switch" aria-checked="${settings.autoSync}" aria-label="Analyze saved leaves automatically" data-action="autosync"><span></span></button></div></div>
+    <h2 class="set-h">Install on your phone</h2>
+    <div class="card">${installCard}</div>
+    <h2 class="set-h">Your data</h2>
+    <div class="card" style="padding-top:.2rem;padding-bottom:.2rem">
+      <button class="rowlink danger" data-action="clear-history">${svg('trash', 22)}<span>Clear history</span></button>
+      <button class="rowlink danger" data-action="clear-pending">${svg('trash', 22)}<span>Delete waiting photos</span></button>
+    </div>
+    <h2 class="set-h">About TomatoDoc</h2>
+    <div class="card" style="padding-top:.2rem;padding-bottom:.2rem">
+      <details class="about"><summary>About</summary><p>TomatoDoc helps tomato growers take a first look at leaf health using a MobileNetV2-based image model.</p></details>
+      <details class="about"><summary>How it works</summary><p>Take a clear photo of one leaf. The app sends it to the TomatoDoc server, which returns the most likely condition and how sure it is. With no signal, the photo is saved on your phone and analyzed later.</p></details>
+      <details class="about"><summary>Privacy</summary><p>Photos are sent only to the TomatoDoc server for analysis. Your scan history is stored on this device only.</p></details>
+      <details class="about"><summary>Help and support</summary><p>Results are guidance, not a final diagnosis. For serious or fast-spreading problems, ask a local agriculturist.</p></details>
+    </div>
+    <p class="version">TomatoDoc version 1.0</p>`;
+}
+const VIEWS = { home: renderHome, result: renderResult, details: renderDetails, history: renderHistory, settings: renderSettings };
+function renderNav() {
+  const tabs = [['home', 'Home', 'home'], ['history', 'History', 'clock'], ['settings', 'Settings', 'sliders']];
+  $('nav').innerHTML = tabs.map(([id, label, icon]) => `<button data-go="${id}">${svg(icon, 24)}<span>${label}</span></button>`).join('');
+}
+function render() {
+  Object.keys(VIEWS).forEach(k => { $('view-' + k).hidden = state.view !== k; });
+  VIEWS[state.view]();
+  const tab = (state.view === 'result' || state.view === 'details') ? state.from : state.view;
+  document.querySelectorAll('.nav button').forEach(b => {
+    const on = b.dataset.go === tab;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  renderStatus();
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-go],[data-open],[data-action]');
+  if (!t) return;
+  if (t.dataset.go) { if (t.dataset.go !== state.view) go(t.dataset.go); return; }
+  if (t.dataset.open) { go('result', { id: t.dataset.open }); return; }
+  const v = t.dataset.value;
+  switch (t.dataset.action) {
+    case 'scan': $('camInput').click(); break;
+    case 'gallery': $('galInput').click(); break;
+    case 'back': history.back(); break;
+    case 'details': go('details', { id: state.id }); break;
+    case 'sync': syncQueue(true); break;
+    case 'filter': state.filter = v; render(); break;
+    case 'textsize': setTextSize(v); break;
+    case 'autosync':
+      settings.autoSync = !settings.autoSync; store.set('td_autoSync', settings.autoSync); render();
+      if (settings.autoSync) syncQueue();
+      break;
+    case 'install': installApp(); break;
+    case 'delete': deleteScan(state.id); break;
+    case 'clear-history':
+      if (confirm('Delete all analyzed scans from this phone?')) {
+        Promise.all(scans.filter(s => s.status === 'done').map(s => dbDelete(s.id))).then(loadScans).then(() => { render(); toast('History cleared.'); });
+      }
+      break;
+    case 'clear-pending':
+      if (confirm('Delete all photos that are still waiting to be analyzed?')) {
+        Promise.all(scans.filter(s => s.status === 'pending').map(s => dbDelete(s.id))).then(loadScans).then(() => { render(); toast('Waiting photos deleted.'); });
+      }
+      break;
+  }
+});
+['camInput', 'galInput'].forEach(id => {
+  $(id).addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; handleFile(f); });
+});
+window.addEventListener('online', () => { state.online = true; renderStatus(); checkHealth(); if (settings.autoSync) syncQueue(); if (state.view === 'history' || state.view === 'home') render(); });
+window.addEventListener('offline', () => { state.online = false; render(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkHealth(); if (settings.autoSync) syncQueue(); } });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; if (state.view === 'settings') render(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('TomatoDoc was installed.'); if (state.view === 'settings') render(); });
+
+/* ---------- Start ---------- */
+(async function init() {
+  applyTextSize();
+  renderNav();
+  history.replaceState({ view: 'home', id: null, from: 'home' }, '');
+  try { await loadScans(); } catch { toast('Saving photos is not available in this browser mode.', true); }
+  render();
+  checkHealth();
+  if (settings.autoSync) syncQueue();
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+})();
+</script>
+</body>
+</html>
